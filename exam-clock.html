@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>考試時鐘與出席看板</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", Arial, sans-serif;
+      background: #0f172a;
+      color: #f9fafb;
+      margin: 0;
+      padding: 20px;
+    }
+    #container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      font-size: 48px;
+      margin: 10px 0;
+    }
+    #subTitle {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #e5e7eb;
+    }
+    #settings {
+      background: #111827;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    #settings label {
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+    #settings input {
+      font-size: 16px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #4b5563;
+      background: #1f2937;
+      color: #f9fafb;
+      min-width: 60px;
+    }
+    #settings button {
+      font-size: 16px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: none;
+      background: #3b82f6;
+      color: #f9fafb;
+      cursor: pointer;
+    }
+    #settings button:hover {
+      background: #2563eb;
+    }
+    #main-display {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+    #time-box, #attendance-box {
+      background: #111827;
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+    /* 時間區塊 */
+    #currentTimeLabel {
+      font-size: 20px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    #currentTime {
+      font-size: 40px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #countdownLabel {
+      font-size: 20px;
+      text-align: center;
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
+    #countdownDisplay {
+      font-size: 60px;
+      text-align: center;
+      letter-spacing: 4px;
+      margin-bottom: 10px;
+    }
+    #countdownControls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    #countdownControls input {
+      font-size: 18px;
+      padding: 4px 8px;
+      width: 80px;
+      text-align: center;
+      border-radius: 8px;
+      border: 1px solid #4b5563;
+      background: #1f2937;
+      color: #f9fafb;
+    }
+    #countdownControls button {
+      font-size: 18px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: #10b981;
+      color: #022c22;
+      font-weight: bold;
+    }
+    #countdownControls button:nth-child(4) {
+      background: #f97316;
+      color: #1f2937;
+    }
+    #countdownControls button:nth-child(5) {
+      background: #ef4444;
+      color: #f9fafb;
+    }
+    #countdownStatus {
+      text-align: center;
+      margin-top: 4px;
+      font-size: 16px;
+      color: #e5e7eb;
+      min-height: 24px;
+    }
+
+    /* 出席區塊 */
+    #attendanceTitle {
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #attendanceNumbers {
+      text-align: center;
+      font-size: 26px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    #attendanceRate {
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      color: #22c55e;
+      margin-bottom: 6px;
+    }
+    #attendanceNote {
+      text-align: center;
+      font-size: 16px;
+      color: #e5e7eb;
+      min-height: 22px;
+    }
+
+    /* 大螢幕友善 */
+    @media (max-width: 900px) {
+      #main-display {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 36px;
+      }
+      #subTitle {
+        font-size: 22px;
+      }
+      #countdownDisplay {
+        font-size: 48px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <!-- 大標題：班級＋考試名稱 -->
+    <h1 id="title">請輸入班級與考試名稱</h1>
+    <div id="subTitle">例如：504 班｜國語期中測驗</div>
+
+    <!-- 設定區：老師輸入 -->
+    <div id="settings">
+      <div>
+        <label for="className">班級：</label>
+        <input id="className" type="text" placeholder="例如：504 班">
+      </div>
+      <div>
+        <label for="examName">考試名稱：</label>
+        <input id="examName" type="text" placeholder="例如：國語期中測驗">
+      </div>
+      <div>
+        <label for="shouldCount">應到：</label>
+        <input id="shouldCount" type="number" min="0" placeholder="人數">
+      </div>
+      <div>
+        <label for="actualCount">實到：</label>
+        <input id="actualCount" type="number" min="0" placeholder="人數">
+      </div>
+      <button id="applyBtn">套用設定</button>
+    </div>
+
+    <!-- 主顯示區：時間＋出席率 -->
+    <div id="main-display">
+      <!-- 時間 / 倒數 -->
+      <div id="time-box">
+        <div id="currentTimeLabel">現在時間</div>
+        <div id="currentTime">--:--:--</div>
+
+        <div id="countdownLabel">考試倒數</div>
+        <div id="countdownDisplay">00:00:00</div>
+
+        <div id="countdownControls">
+          <label>分：</label>
+          <input id="minutesInput" type="number" min="0" value="40">
+          <label>秒：</label>
+          <input id="secondsInput" type="number" min="0" max="59" value="0">
+          <button id="setBtn">設定</button>
+          <button id="startBtn">開始</button>
+          <button id="pauseBtn">暫停</button>
+          <button id="resetBtn">歸零</button>
+        </div>
+        <div id="countdownStatus"></div>
+      </div>
+
+      <!-- 出席資訊 -->
+      <div id="attendance-box">
+        <div id="attendanceTitle">出席狀況</div>
+        <div id="attendanceNumbers">
+          應到：<span id="shouldDisplay">--</span> 人<br>
+          實到：<span id="actualDisplay">--</span> 人
+        </div>
+        <div id="attendanceRate">出席率：--%</div>
+        <div id="attendanceNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== 班級 & 考試設定 + 出席率 =====
+    const titleEl = document.getElementById('title');
+    const subTitleEl = document.getElementById('subTitle');
+    const classNameInput = document.getElementById('className');
+    const examNameInput = document.getElementById('examName');
+    const shouldInput = document.getElementById('shouldCount');
+    const actualInput = document.getElementById('actualCount');
+    const applyBtn = document.getElementById('applyBtn');
+
+    const shouldDisplay = document.getElementById('shouldDisplay');
+    const actualDisplay = document.getElementById('actualDisplay');
+    const attendanceRateEl = document.getElementById('attendanceRate');
+    const attendanceNoteEl = document.getElementById('attendanceNote');
+
+    applyBtn.addEventListener('click', () => {
+      const className = classNameInput.value.trim();
+      const examName = examNameInput.value.trim();
+      const should = parseInt(shouldInput.value, 10);
+      const actual = parseInt(actualInput.value, 10);
+
+      // 更新標題
+      if (className && examName) {
+        titleEl.textContent = `${className}｜${examName}`;
+        subTitleEl.textContent = '請保持安靜，專心作答';
+      } else if (className || examName) {
+        titleEl.textContent = `${className || ''}${className && examName ? '｜' : ''}${examName || ''}`;
+        subTitleEl.textContent = '請保持安靜，專心作答';
+      } else {
+        titleEl.textContent = '請輸入班級與考試名稱';
+        subTitleEl.textContent = '例如：504 班｜國語期中測驗';
+      }
+
+      // 更新出席
+      if (!isNaN(should)) {
+        shouldDisplay.textContent = should;
+      } else {
+        shouldDisplay.textContent = '--';
+      }
+      if (!isNaN(actual)) {
+        actualDisplay.textContent = actual;
+      } else {
+        actualDisplay.textContent = '--';
+      }
+
+      // 計算出席率
+      if (!isNaN(should) && should > 0 && !isNaN(actual) && actual >= 0) {
+        const rate = Math.round((actual / should) * 1000) / 10; // 一位小數
+        attendanceRateEl.textContent = `出席率：${rate}%`;
+        if (rate === 100) {
+          attendanceNoteEl.textContent = '全員到齊，太棒了！';
+        } else if (rate >= 95) {
+          attendanceNoteEl.textContent = '出席率很高，再接再厲！';
+        } else {
+          attendanceNoteEl.textContent = '有同學請假或缺席，老師已知悉。';
+        }
+      } else {
+        attendanceRateEl.textContent = '出席率：--%';
+        attendanceNoteEl.textContent = '';
+      }
+    });
+
+    // ===== 現在時間顯示 =====
+    const currentTimeEl = document.getElementById('currentTime');
+    function updateCurrentTime() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      currentTimeEl.textContent = `${h}:${m}:${s}`;
+    }
+    setInterval(updateCurrentTime, 1000);
+    updateCurrentTime();
+
+    // ===== 倒數計時器 =====
+    const countdownDisplay = document.getElementById('countdownDisplay');
+    const minutesInput = document.getElementById('minutesInput');
+    const secondsInput = document.getElementById('secondsInput');
+    const setBtn = document.getElementById('setBtn');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const countdownStatus = document.getElementById('countdownStatus');
+
+    let totalSeconds = 0;
+    let remainingSeconds = 0;
+    let timerId = null;
+    let isRunning = false;
+
+    function renderCountdown(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      const ss = String(s).padStart(2, '0');
+      countdownDisplay.textContent = `${hh}:${mm}:${ss}`;
+    }
+
+    function setCountdown() {
+      const mins = parseInt(minutesInput.value, 10) || 0;
+      const secs = parseInt(secondsInput.value, 10) || 0;
+      if (mins < 0 || secs < 0 || secs > 59) {
+        countdownStatus.textContent = '請輸入正確的時間（分為0以上，秒為0～59）。';
+        return;
+      }
+      totalSeconds = mins * 60 + secs;
+      remainingSeconds = totalSeconds;
+      renderCountdown(remainingSeconds);
+      countdownStatus.textContent = `已設定考試時間為 ${mins} 分 ${secs} 秒。`;
+    }
+
+    function startCountdown() {
+      if (remainingSeconds <= 0) {
+        countdownStatus.textContent = '請先設定時間。';
+        return;
+      }
+      if (isRunning) {
+        countdownStatus.textContent = '倒數已在進行中。';
+        return;
+      }
+      isRunning = true;
+      countdownStatus.textContent = '倒數進行中…';
+      timerId = setInterval(() => {
+        remainingSeconds--;
+        renderCountdown(remainingSeconds);
+        if (remainingSeconds <= 0) {
+          clearInterval(timerId);
+          isRunning = false;
+          remainingSeconds = 0;
+          renderCountdown(0);
+          countdownStatus.textContent = '時間到！請同學放下筆，停止作答。';
+        }
+      }, 1000);
+    }
+
+    function pauseCountdown() {
+      if (!isRunning) {
+        countdownStatus.textContent = '目前沒有在倒數。';
+        return;
+      }
+      clearInterval(timerId);
+      isRunning = false;
+      countdownStatus.textContent = '已暫停倒數。';
+    }
+
+    function resetCountdown() {
+      clearInterval(timerId);
+      isRunning = false;
+      remainingSeconds = 0;
+      totalSeconds = 0;
+      renderCountdown(0);
+      countdownStatus.textContent = '倒數已歸零。';
+    }
+
+    setBtn.addEventListener('click', setCountdown);
+    startBtn.addEventListener('click', startCountdown);
+    pauseBtn.addEventListener('click', pauseCountdown);
+    resetBtn.addEventListener('click', resetCountdown);
+
+    // 一開始先顯示 00:00:00
+    renderCountdown(0);
+  </script>
+</body>
+</html>
